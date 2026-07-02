@@ -1,0 +1,173 @@
+<!doctype html>
+<!--
+  Wabbi Support
+  Effective 2026-07-02. Founder-run indie support page.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wabbi — Support</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --surface: #efe6d6;
+      --primary: #6b4a2b;
+      --text: #2f2117;
+      --text-secondary: #6b5b45;
+      --border: #d9cdb8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 20px 64px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--primary);
+    }
+    header .sub { color: var(--text-secondary); font-size: 14px; }
+    nav {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    nav a { color: var(--primary); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    h2 {
+      margin-top: 32px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    h3 { margin-top: 20px; font-size: 16px; font-weight: 600; }
+    p { margin: 10px 0; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    a { color: var(--primary); }
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 18px 0;
+      font-size: 15px;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Wabbi Support</h1>
+      <div class="sub">We're a small team — we'll get back to you as fast as we can.</div>
+      <nav>
+        <a href="./terms.html">Terms</a>
+        <a href="./privacy.html">Privacy</a>
+        <a href="./support.html">Support</a>
+      </nav>
+    </header>
+
+    <div class="callout">
+      <p style="margin: 0;">
+        Email us at
+        <a href="mailto:contactafterai@gmail.com"><strong>contactafterai@gmail.com</strong></a>.
+        Include your username and, for purchase issues, your Apple receipt
+        number.
+      </p>
+    </div>
+
+    <h2>Delete your account</h2>
+    <p>
+      Open Wabbi and go to <strong>Settings → Delete Account</strong>. You'll
+      be asked to confirm by typing DELETE. Deletion is immediate and
+      removes your wabbis, currency, inventory, activity, and social
+      connections. This cannot be undone.
+    </p>
+
+    <h2>Frequently asked</h2>
+
+    <h3>My steps or workouts aren't showing up.</h3>
+    <p>
+      Wabbi reads from Apple Health. If your steps or workouts aren't
+      appearing, check that:
+    </p>
+    <ul>
+      <li>Wabbi has permission to read the relevant data in
+        <strong>iOS Settings → Health → Data Access &amp; Devices →
+        Wabbi</strong>. Steps, Distance Walking + Running, and Workouts
+        should all be ON.</li>
+      <li>Your fitness app (Strava, Nike Run Club, Garmin Connect, etc.)
+        is <em>writing</em> to Apple Health. Many apps have this off by
+        default. Look for "Health" or "Apple Health" in that app's
+        settings.</li>
+      <li>The workout is a supported type (running, walking, or hiking).
+        Cycling, swimming, and strength workouts are on our roadmap but
+        don't award XP today.</li>
+    </ul>
+
+    <h3>I bought Wabbi Crystals but they haven't shown up.</h3>
+    <p>
+      Delivery usually takes a few seconds. If your balance hasn't
+      updated within a minute:
+    </p>
+    <ul>
+      <li>Close and reopen Wabbi — the app re-fetches your balance on
+        launch.</li>
+      <li>If the crystals still don't appear, email us with your Apple
+        receipt (the confirmation email from Apple works) and we'll
+        credit them manually.</li>
+    </ul>
+    <p>
+      You do not need to use "Restore Purchases" for Wabbi Crystal packs
+      — they're consumables and are delivered directly on purchase.
+    </p>
+
+    <h3>I got charged but the app didn't accept my purchase.</h3>
+    <p>
+      Apple handles all Wabbi purchases and refunds directly. Visit
+      <a href="https://reportaproblem.apple.com/">reportaproblem.apple.com</a>
+      to request a refund from Apple. If you'd also like us to look into
+      the app-side event, email us with your receipt number.
+    </p>
+
+    <h3>How do I unlock the premium Pass?</h3>
+    <p>
+      The premium Pass is unlocked with Wabbi Crystals (currently 950)
+      from inside the Pass tab. You can earn Wabbi Crystals by playing
+      through free-track rewards or buy them as Crystal packs from the
+      Crystal Store.
+    </p>
+
+    <h3>I want to report a bug or share feedback.</h3>
+    <p>
+      Please email us at
+      <a href="mailto:contactafterai@gmail.com">contactafterai@gmail.com</a>.
+      Screenshots, your device model, and a quick description of what you
+      were doing help enormously.
+    </p>
+
+    <footer>
+      © 2026 Wabbi. All rights reserved. Effective July 2, 2026.
+    </footer>
+  </div>
+</body>
+</html>

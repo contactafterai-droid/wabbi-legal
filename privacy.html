@@ -1,0 +1,211 @@
+<!doctype html>
+<!--
+  Wabbi Privacy Policy
+  Effective 2026-07-02. Standard indie-app boilerplate. This is NOT legal
+  advice; the founder should have a lawyer review before public launch.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wabbi — Privacy Policy</title>
+  <style>
+    :root {
+      --bg: #f5efe6;
+      --surface: #efe6d6;
+      --primary: #6b4a2b;
+      --text: #2f2117;
+      --text-secondary: #6b5b45;
+      --border: #d9cdb8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 20px 64px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--primary);
+    }
+    header .sub { color: var(--text-secondary); font-size: 14px; }
+    nav {
+      display: flex;
+      gap: 16px;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+    nav a { color: var(--primary); text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    h2 {
+      margin-top: 32px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    h3 { margin-top: 20px; font-size: 16px; font-weight: 600; }
+    p { margin: 10px 0; }
+    ul { padding-left: 22px; }
+    li { margin: 4px 0; }
+    a { color: var(--primary); }
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 18px 0;
+      font-size: 15px;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Wabbi Privacy Policy</h1>
+      <div class="sub">Effective July 2, 2026</div>
+      <nav>
+        <a href="./terms.html">Terms</a>
+        <a href="./privacy.html">Privacy</a>
+        <a href="./support.html">Support</a>
+      </nav>
+    </header>
+
+    <p>
+      Wabbi is a fitness companion app that turns real walks and workouts
+      into progress for a small on-screen creature. This Privacy Policy
+      explains what we collect, why, where it lives, and the choices you
+      have. If anything here is unclear, please email
+      <a href="mailto:contactafterai@gmail.com">contactafterai@gmail.com</a>.
+    </p>
+
+    <div class="callout">
+      <strong>The short version.</strong> We collect the minimum needed to
+      run the app: an account identifier, a username you pick, and fitness
+      data you allow us to read from Apple Health. We never sell your data,
+      we do not run third-party ads, and you can delete your account and
+      everything associated with it from inside the app at any time.
+    </div>
+
+    <h2>1. What we collect</h2>
+
+    <h3>Account information</h3>
+    <p>
+      When you sign in with Google or Sign in with Apple, we receive an
+      account identifier and an email address from that provider. If you
+      choose "Hide My Email" during Sign in with Apple, we only ever see
+      Apple's private relay address, not your real email. We store the
+      account identifier so we can recognize you on future launches and a
+      display name / username you pick inside the app.
+    </p>
+
+    <h3>Fitness data (Apple HealthKit)</h3>
+    <p>
+      With your permission, Wabbi reads the following data types from
+      Apple Health on your device:
+    </p>
+    <ul>
+      <li>Step counts and walking / running distance</li>
+      <li>Workouts (running, walking, hiking) — including duration,
+        distance, calories, and route where you've allowed it</li>
+    </ul>
+    <p>
+      We use this data <strong>solely to power in-app progression</strong>:
+      awarding XP, feeding leaderboards, evolving your wabbi, and unlocking
+      cosmetics. Per Apple's App Store Review Guideline 5.1.3, we do not
+      use HealthKit data for advertising, we do not sell it, and we do not
+      share it with any third party. You can revoke Wabbi's HealthKit
+      access at any time from iOS Settings → Health → Data Access & Devices.
+    </p>
+
+    <h3>Usage + diagnostic data</h3>
+    <p>
+      We keep a minimal internal log of app-side events (level-ups,
+      unlocks, purchases) so we can support you and improve the game. We
+      do not collect location data outside of the workout routes you
+      explicitly allow via HealthKit.
+    </p>
+
+    <h3>Purchase data</h3>
+    <p>
+      All purchases (Wabbi Crystals gem packs) are processed by Apple
+      through the App Store. We never see your payment card details.
+      RevenueCat processes purchase receipts on our behalf as our billing
+      infrastructure — we receive a transaction identifier, product id,
+      and gem-pack size so we can credit your account. See
+      <a href="https://www.revenuecat.com/privacy">RevenueCat's privacy policy</a>
+      for their processing details.
+    </p>
+
+    <h2>2. Where your data lives</h2>
+    <p>
+      Wabbi's backend is hosted on <a href="https://supabase.com/">Supabase</a>
+      in the United States. Your account information, wabbi progression,
+      inventory, and per-purchase records are stored in Supabase's Postgres
+      database. Fitness data from HealthKit stays on your device except
+      for the numeric totals we write into your progression (e.g.
+      "10,000 steps on 2026-07-02"); we never send raw HealthKit samples
+      off your device.
+    </p>
+
+    <h2>3. Social features</h2>
+    <p>
+      Wabbi has an in-app leaderboard and public profile pages that show
+      your username, your public wabbi collection, and aggregate activity
+      stats (miles, weekly totals). Individual workout routes and start
+      coordinates are never shown to other users, even to accounts you
+      follow. You can set your account to private in Settings — private
+      accounts show only your username and avatar to non-followers.
+    </p>
+
+    <h2>4. Deleting your data</h2>
+    <p>
+      You can permanently delete your account from inside the app at
+      Settings → Delete Account. This removes your account, all wabbis,
+      currency balances, inventory, and social connections from our
+      database. Deletion is immediate and cannot be undone.
+    </p>
+
+    <h2>5. Children</h2>
+    <p>
+      Wabbi is intended for users aged 13 and older. We do not knowingly
+      collect information from anyone under 13. If you believe a child
+      under 13 has created an account, please email us and we will remove
+      it.
+    </p>
+
+    <h2>6. Changes to this policy</h2>
+    <p>
+      If we change this policy in a way that affects what we collect or
+      how we use it, we'll update the effective date at the top and notify
+      you in-app. Continued use of the app after a change means you accept
+      the updated policy.
+    </p>
+
+    <h2>7. Contact</h2>
+    <p>
+      Questions or requests: <a href="mailto:contactafterai@gmail.com">contactafterai@gmail.com</a>.
+    </p>
+
+    <footer>
+      © 2026 Wabbi. All rights reserved. Effective July 2, 2026.
+    </footer>
+  </div>
+</body>
+</html>
