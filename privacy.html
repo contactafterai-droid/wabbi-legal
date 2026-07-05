@@ -158,10 +158,16 @@
       Wabbi's backend is hosted on <a href="https://supabase.com/">Supabase</a>
       in the United States. Your account information, wabbi progression,
       inventory, and per-purchase records are stored in Supabase's Postgres
-      database. Fitness data from HealthKit stays on your device except
-      for the numeric totals we write into your progression (e.g.
-      "10,000 steps on 2026-07-02"); we never send raw HealthKit samples
-      off your device.
+      database. From Apple Health we store your derived daily step and
+      distance totals and a record of each workout you complete — its type,
+      times, duration, distance, calories, and, when you have allowed route
+      access, the workout's route path and starting coordinates. Workout
+      routes and start coordinates are precise location data; they are kept
+      only on your own activity records, are used solely for in-app
+      progression and your own activity history, and are never shown to other
+      users (see Section 3). We do not stream raw, continuous HealthKit sample
+      data off your device, and we do not collect your location outside of
+      these Apple Health workouts.
     </p>
 
     <h2>3. Social features</h2>
