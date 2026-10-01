@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["G7CPBGNL43.com.meetwabbi.app"],
+        "components": [
+          {
+            "/": "/invite/*",
+            "comment": "Referral invite links only. Everything else on wabbiapp.com stays a web page."
+          },
+          {
+            "/": "/invite",
+            "comment": "The slash-less form, which GitHub Pages 301s to /invite/ preserving the query string."
+          }
+        ]
+      }
+    ]
+  }
+}
