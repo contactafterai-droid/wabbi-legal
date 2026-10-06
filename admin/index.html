@@ -1,0 +1,308 @@
+<!doctype html>
+<!--
+  wabbiapp.com/admin — the founder dashboard (mig 129). READ-ONLY.
+
+  ⚠️ NO SERVICE-ROLE KEY. This page holds only the PUBLIC publishable key (the same
+  one every app build ships). You sign in with Google; every number comes from ONE
+  server function, admin_dashboard(), which checks the signed-in account against
+  public.admin_users and refuses everyone else. A non-admin gets an error and this
+  page shows nothing. The function is STABLE, so it cannot change any data.
+
+  ⚠️ EVERYTHING IS WRITTEN WITH textContent. Usernames are user-chosen; never
+  "improve" a cell with innerHTML.
+
+  No analytics, no cookies beyond Supabase's own session in localStorage, no fonts
+  from a CDN. One script: supabase-js, pinned to the version the app pins.
+  Source of truth: wabbi repo legal-site/admin/index.html → copied by hand to the
+  wabbi-legal Pages repo (same as the invite page).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Wabbi admin</title>
+<style>
+  :root {
+    --bg: #FBF2E4; --surface: #FFFBF4; --border: #EFE2CE; --primary: #F0A868;
+    --on-primary: #5F340F; --text: #564A3E; --muted: #73675A;
+    --warn-bg: #FCE3CF; --warn: #8A3B0C; --ok: #2F6B3B;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; font-size: 15px; line-height: 1.4; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px 16px 48px; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 20px; margin: 0; flex: 1; }
+  .who { color: var(--muted); font-size: 13px; }
+  button, a.btn { font: inherit; border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer;
+    background: var(--primary); color: var(--on-primary); font-weight: 600; text-decoration: none; display: inline-block; }
+  button.quiet { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-weight: 500; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .alert { background: var(--warn-bg); border-color: #F2C49E; }
+  .alert .big { color: var(--warn); }
+  .ok .big { color: var(--ok); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+  .tile .label { color: var(--muted); font-size: 12px; }
+  .tile .big, .big { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile.warn { background: var(--warn-bg); }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; }
+  .bar { display: inline-block; height: 8px; background: var(--primary); border-radius: 4px; vertical-align: middle; }
+  .muted { color: var(--muted); }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; background: var(--bg); border: 1px solid var(--border); }
+  .pill.warn { background: var(--warn-bg); border-color: #F2C49E; color: var(--warn); }
+  .center { text-align: center; padding: 48px 16px; }
+  details > summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
+  .two { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 760px) { .two { grid-template-columns: 1fr 1fr; } }
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 24px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Wabbi admin</h1>
+    <span class="who" id="who"></span>
+    <button class="quiet" id="signout" hidden>Sign out</button>
+  </header>
+  <div id="app"><p class="center muted">Loading…</p></div>
+  <footer>Read-only. Every number comes from admin_dashboard(), which only answers for admins.</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.4/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SUPABASE_URL = 'https://yyvwmroysoqjqkgevcxb.supabase.co';
+  // Public publishable key — the same one every app build ships. NOT a service key.
+  var SUPABASE_KEY = 'sb_publishable_u42UOzi1ELx72zi5-8o4gQ_-O8seiG-';
+  var TZ = 'America/New_York';
+
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+  });
+  var app = document.getElementById('app');
+
+  // ---- tiny DOM helpers (textContent only) ---------------------------------
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') n.textContent = attrs[k];
+      else if (k === 'class') n.className = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+  function txt(s) { return document.createTextNode(s == null ? '' : String(s)); }
+  function num(n) { return n == null ? '—' : Number(n).toLocaleString('en-US'); }
+  function day(s) { if (!s) return '—';
+    var d = new Date(String(s).length === 10 ? s + 'T12:00:00Z' : s);
+    return d.toLocaleDateString('en-US', { timeZone: TZ, month: 'short', day: 'numeric', weekday: 'short' }); }
+  function when(s) { if (!s) return 'never';
+    var d = new Date(s), h = (Date.now() - d.getTime()) / 36e5;
+    if (h < 1) return 'within the hour';
+    if (h < 24) return Math.round(h) + 'h ago';
+    var dd = Math.round(h / 24); return dd + (dd === 1 ? ' day ago' : ' days ago'); }
+  function user(u) { return u ? '@' + u : '(no username yet)'; }
+  function version(v, b) { if (!v && !b) return 'unstamped (ASC ≤ 33)'; return (v || '?') + ' (' + (b || '?') + ')'; }
+  function card(title, sub, kids, cls) {
+    return el('section', { class: 'card' + (cls ? ' ' + cls : '') },
+      [el('h2', { text: title }), sub ? el('p', { class: 'sub', text: sub }) : null].concat(kids || []));
+  }
+  function table(head, rows) {
+    var thead = el('tr', null, head.map(function (h) {
+      return el('th', { text: h.label, class: h.n ? 'n' : '' }); }));
+    var body = rows.map(function (r) {
+      return el('tr', null, head.map(function (h) {
+        var v = r[h.key];
+        var td = el('td', { class: h.n ? 'n' : '' });
+        if (v instanceof Node) td.appendChild(v); else td.textContent = v == null ? '—' : v;
+        return td; }));
+    });
+    return el('div', { class: 'scroll' }, [el('table', null, [el('thead', null, [thead]), el('tbody', null, body)])]);
+  }
+  function tile(label, value, warn) {
+    return el('div', { class: 'tile' + (warn ? ' warn' : '') },
+      [el('div', { class: 'label', text: label }), el('div', { class: 'big', text: value })]);
+  }
+  function bar(v, max) {
+    var w = max > 0 ? Math.max(2, Math.round((v / max) * 120)) : 0;
+    return el('span', null, [el('span', { class: 'bar', style: 'width:' + w + 'px' }), txt(' ' + num(v))]);
+  }
+
+  // ---- states ---------------------------------------------------------------
+  function show(nodes) { app.textContent = ''; nodes.forEach(function (n) { app.appendChild(n); }); }
+
+  function signedOut() {
+    document.getElementById('who').textContent = '';
+    document.getElementById('signout').hidden = true;
+    var b = el('button', { text: 'Sign in with Google' });
+    b.addEventListener('click', function () {
+      sb.auth.signInWithOAuth({ provider: 'google',
+        options: { redirectTo: window.location.origin + window.location.pathname } });
+    });
+    show([el('div', { class: 'card center' }, [
+      el('p', { text: 'Sign in with the Google account you use in Wabbi.' }), b])]);
+  }
+
+  function refused(message) {
+    // A non-admin sees nothing but this line — no counts, no layout of the data.
+    show([el('div', { class: 'card center' }, [el('p', { text: message })])]);
+  }
+
+  // ---- the dashboard --------------------------------------------------------
+  function render(d) {
+    var out = [];
+
+    // 1. Reports waiting — first, always.
+    var rep = d.reports_open || { count: 0, items: [] };
+    out.push(card(
+      rep.count > 0 ? rep.count + (rep.count === 1 ? ' report' : ' reports') + ' waiting for review' : 'No reports waiting',
+      'Apple requires us to act on reports. Details are in the reports table; this shows who and why.',
+      rep.count > 0 ? [table(
+        [{ key: 'when', label: 'Received' }, { key: 'reason', label: 'Reason' },
+         { key: 'target', label: 'Reported' }, { key: 'reporter', label: 'Reported by' }],
+        rep.items.map(function (r) { return { when: day(r.created_at) + ' · ' + when(r.created_at),
+          reason: r.reason, target: r.target, reporter: r.reporter }; }))] : [],
+      rep.count > 0 ? 'alert' : 'ok'));
+
+    // 2. Headline tiles.
+    var t = d.totals || {}, lb = d.leaderboard || {}, m = d.money || {};
+    var lbWarn = lb.this_week > lb.warn_at;
+    out.push(el('div', { class: 'tiles' }, [
+      tile('Accounts', num(t.accounts)),
+      tile('Opened today', num(t.opened_today)),
+      tile('Opened in 7 days', num(t.opened_7d)),
+      tile('On this week’s board', num(lb.this_week) + (lbWarn ? ' ⚠️' : ''), lbWarn),
+      tile('Purchases (live)', num(m.production_purchases)),
+      tile('Open reports', num(rep.count), rep.count > 0)
+    ]));
+
+    // 3. Leaderboard size.
+    out.push(card('This week’s leaderboard',
+      lbWarn ? 'Above ' + lb.warn_at + ' — the board pages at ' + lb.page_size + '. Make sure 1.0.11 (pages) is out.'
+             : 'Warns above ' + lb.warn_at + '; the board pages at ' + lb.page_size + ' from 1.0.11.',
+      [el('p', null, [el('span', { class: 'big', text: num(lb.this_week) }),
+                      txt(' people with 100+ steps since ' + day(lb.week_of))]),
+       table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'State' }, { key: 'n', label: 'On the board', n: true }],
+         (lb.past_weeks || []).map(function (w) { return { w: day(w.week_of), s: w.state, n: num(w.size) }; }))],
+      lbWarn ? 'alert' : ''));
+
+    // 4. Sign-ups + funnel.
+    var sd = d.signups_daily || [], maxS = Math.max.apply(null, sd.map(function (r) { return r.signups; }).concat([1]));
+    out.push(card('Sign-ups', 'How far each day’s new accounts got. “Steps arrived” stands in for Health connected (not recorded directly).', [
+      el('details', { open: '' }, [el('summary', { text: 'By week (last 12)' }),
+        table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'Sign-ups', n: true }, { key: 'u', label: 'Username', n: true },
+               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Steps arrived', n: true }],
+          (d.signups_weekly || []).map(function (r) { return { w: day(r.week_of), s: num(r.signups), u: num(r.with_username),
+            h: num(r.hatched), st: num(r.steps_arrived) }; }))]),
+      el('details', null, [el('summary', { text: 'By day (last 30)' }),
+        table([{ key: 'd', label: 'Day' }, { key: 's', label: 'Sign-ups' }, { key: 'u', label: 'Username', n: true },
+               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Steps arrived', n: true }],
+          sd.map(function (r) { return { d: day(r.day), s: bar(r.signups, maxS), u: num(r.with_username),
+            h: num(r.hatched), st: num(r.steps_arrived) }; }))])
+    ]));
+
+    // 5. App opens.
+    var od = d.opens_daily || [], maxO = Math.max.apply(null, od.map(function (r) { return r.users; }).concat([1]));
+    out.push(card('People opening the app',
+      'Distinct people per day, from the care updates the app writes on open. Opened in 30 days: ' + num(t.opened_30d) + '.', [
+      el('details', { open: '' }, [el('summary', { text: 'By day (last 30)' }),
+        table([{ key: 'd', label: 'Day' }, { key: 'u', label: 'People' }],
+          od.map(function (r) { return { d: day(r.day), u: bar(r.users, maxO) }; }))]),
+      el('details', null, [el('summary', { text: 'By week (last 12)' }),
+        table([{ key: 'w', label: 'Week of' }, { key: 'u', label: 'People', n: true }],
+          (d.opens_weekly || []).map(function (r) { return { w: day(r.week_of), u: num(r.users) }; }))])
+    ]));
+
+    // 6. Not syncing.
+    var ns = d.not_syncing || {};
+    function nsTable(list) {
+      return table([{ key: 'u', label: 'User' }, { key: 'why', label: 'Likely why' }, { key: 'ls', label: 'Last steps' },
+                    { key: 'lo', label: 'Last opened' }, { key: 'v', label: 'Version' }, { key: 'j', label: 'Joined' }],
+        list.map(function (r) { return { u: user(r.username),
+          why: el('span', { class: 'pill' + (r.why === 'old version' ? ' warn' : ''), text: r.why }),
+          ls: r.last_sync ? when(r.last_sync) : 'never', lo: when(r.last_open),
+          v: version(r.app_version, r.app_build), j: day(r.joined) }; }));
+    }
+    out.push(card('Not syncing',
+      '“Likely why”: not opening the app (no open in 3 days) → old version (below build ' + (d.min_recommended_build || '?') +
+      ') → otherwise steps aren’t arriving from Health.', [
+      el('details', { open: '' }, [el('summary', { text: 'No steps for 7+ days — ' + (ns.d7plus || []).length }), nsTable(ns.d7plus || [])]),
+      el('details', { open: '' }, [el('summary', { text: 'No steps for 3–7 days — ' + (ns.d3to7 || []).length }), nsTable(ns.d3to7 || [])]),
+      el('details', null, [el('summary', { text: 'Never synced — ' + (ns.never || []).length }), nsTable(ns.never || [])])
+    ]));
+
+    // 7. Referrals + clubs.
+    var r = d.referrals || {}, c = d.clubs || {};
+    out.push(el('div', { class: 'two' }, [
+      card('Referrals', null, [
+        el('div', { class: 'tiles' }, [tile('Redeemed', num(r.redeemed)), tile('Qualified', num(r.qualified)),
+          tile('Rewards granted', num(r.rewards_granted)), tile('Welcome eggs', num(r.welcome_eggs_granted))]),
+        table([{ key: 'i', label: 'Friend' }, { key: 'f', label: 'Invited by' }, { key: 'q', label: 'Status' }],
+          (r.recent || []).map(function (x) { return { i: user(x.invitee), f: user(x.referrer),
+            q: x.rewards_granted_at ? 'rewarded' : x.qualified_at ? 'qualified' : 'waiting for steps' }; }))]),
+      card('Clubs', num(c.count) + ' clubs · ' + num(c.memberships) + ' memberships', [
+        table([{ key: 'n', label: 'Club' }, { key: 'm', label: 'Members', n: true }, { key: 'c', label: 'Created' }],
+          (c.items || []).map(function (x) { return { n: x.name, m: num(x.members), c: day(x.created_at) }; }))])
+    ]));
+
+    // 8. Versions.
+    out.push(card('App versions in use', 'Below build ' + (d.min_recommended_build || '?') + ' is nudged to update.', [
+      table([{ key: 'v', label: 'Version' }, { key: 'u', label: 'Accounts', n: true }, { key: 'o', label: 'Opened in 7 days', n: true }],
+        (d.versions || []).map(function (x) {
+          var old = x.build && /^\d+$/.test(x.build) && Number(x.build) < (d.min_recommended_build || 0);
+          return { v: el('span', { class: old ? 'pill warn' : '', text: version(x.version, x.build) }),
+                   u: num(x.users), o: num(x.opened_7d) }; }))]));
+
+    // 9. Money — Wabbi's own credit ledger; RevenueCat is the source of truth.
+    var rc = el('a', { class: 'btn', href: d.revenuecat_url || 'https://app.revenuecat.com/', target: '_blank', rel: 'noopener', text: 'Open RevenueCat' });
+    out.push(card('Purchases', 'Recorded in Wabbi’s own data when RevenueCat credits gems. Money totals live in RevenueCat.', [
+      el('div', { class: 'tiles' }, [tile('Live purchases', num(m.production_purchases)), tile('Buyers', num(m.production_buyers)),
+        tile('Gems credited', num(m.production_gems)), tile('Premium Pass unlocks', num(m.premium_pass_unlocks))]),
+      table([{ key: 'p', label: 'Pack' }, { key: 'n', label: 'Purchases', n: true }, { key: 'g', label: 'Gems', n: true }],
+        (m.by_product || []).map(function (x) { return { p: x.product.replace('com.meetwabbi.app.', ''), n: num(x.purchases), g: num(x.gems) }; })),
+      el('p', { class: 'muted', text: 'Last live purchase: ' + (m.last_purchase_at ? day(m.last_purchase_at) : 'none') +
+        ' · Sandbox (test) purchases not counted: ' + num(m.sandbox_purchases) }),
+      rc]));
+
+    out.push(el('p', { class: 'muted center', text: 'Updated ' + new Date(d.generated_at).toLocaleString('en-US', { timeZone: TZ }) + ' ET' }));
+    show(out);
+  }
+
+  // ---- flow -----------------------------------------------------------------
+  function load(session) {
+    if (!session) { signedOut(); return; }
+    document.getElementById('who').textContent = 'Signed in';
+    document.getElementById('signout').hidden = false;
+    show([el('p', { class: 'center muted', text: 'Loading…' })]);
+    sb.rpc('admin_dashboard').then(function (res) {
+      if (res.error) {
+        var msg = res.error.message || '';
+        if (msg.indexOf('admin_only') >= 0) refused('This account doesn’t have access to the admin dashboard.');
+        else if (msg.indexOf('not_authenticated') >= 0) signedOut();
+        else refused('Couldn’t load the dashboard. Try again in a moment.');
+        return;
+      }
+      render(res.data || {});
+    });
+  }
+
+  document.getElementById('signout').addEventListener('click', function () {
+    sb.auth.signOut().then(function () { signedOut(); });
+  });
+  sb.auth.onAuthStateChange(function (_evt, session) { load(session); });
+})();
+</script>
+</body>
+</html>
