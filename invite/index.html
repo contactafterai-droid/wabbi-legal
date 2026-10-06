@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  invite — the referral landing page
+  ============================================================================
+  Canonical URL:  https://wabbiapp.com/invite/?u=<username>
+
+  ⚠️ THIS URL IS PERMANENT ONCE A SINGLE PERSON SHARES IT. It is a DIRECTORY
+  with an index.html, not `invite.html`, on purpose: a directory + index is
+  resolved identically by GitHub Pages, Netlify, Vercel, S3 and nginx, so the
+  link keeps working if the site ever moves off Pages. GitHub Pages also 301s
+  `/invite` -> `/invite/` preserving the query string, so the slash-less form
+  works too — but the slashed form is the one to share, because it needs no
+  redirect anywhere.
+
+  ⚠️ THE USERNAME COMES FROM THE URL AND IS THEREFORE HOSTILE INPUT. It is
+  written with `textContent`, NEVER `innerHTML` — textContent cannot create
+  nodes, so `?u=<img src=x onerror=...>` renders as literal text instead of
+  executing on the wabbiapp.com origin. Do not "improve" this with innerHTML,
+  insertAdjacentHTML, or a template literal into innerHTML.
+
+  ⚠️ NO TRACKING. No analytics, no cookies, no fonts from a CDN, no pixels, no
+  third-party requests of any kind. The page is one file and loads nothing.
+
+  Palette is the app's, from src/theme/theme.ts.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You've been invited to Wabbi</title>
+<meta name="description" content="Wabbi is a calm step pet. Your real walks and runs hatch and grow a small creature.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="You've been invited to Wabbi">
+<meta property="og:description" content="A calm step pet. Your real walks and runs hatch and grow a small creature.">
+<style>
+  :root {
+    --bg: #FBF2E4;
+    --surface: #FFFBF4;
+    --border: #EFE2CE;
+    --primary: #F0A868;
+    --on-primary: #5F340F;
+    --text: #564A3E;
+    --muted: #73675A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    justify-content: center;
+    padding: 32px 20px 56px;
+    min-height: 100vh;
+  }
+  main { width: 100%; max-width: 420px; text-align: center; }
+  .mark { font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  h1 { font-size: 27px; line-height: 1.25; font-weight: 600; margin: 26px 0 0; }
+  /* The username can be long or unbroken — never let it push the layout wide. */
+  .who { overflow-wrap: anywhere; }
+  .lede { font-size: 16px; line-height: 1.55; color: var(--muted); margin: 14px 0 0; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    margin: 28px 0 0;
+    text-align: left;
+  }
+  .card h2 { font-size: 14px; margin: 0 0 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  ol { margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.7; }
+  code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .cta {
+    display: inline-block;
+    margin: 28px 0 0;
+    padding: 15px 34px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 17px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 999px;
+  }
+  .cta:active { opacity: .75; }
+  footer { margin: 40px 0 0; font-size: 13px; color: var(--muted); }
+  footer a { color: var(--muted); }
+  @media (prefers-color-scheme: dark) {
+    /* The app is light-only; keep the page legible rather than inventing a
+       dark palette that does not exist in the product. */
+    body { background: var(--bg); color: var(--text); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="mark">Wabbi</p>
+
+  <h1><span id="headline">You've been invited to Wabbi</span></h1>
+
+  <p class="lede">
+    Wabbi is a calm step pet. Your real walks and runs hatch a small creature and
+    keep it growing — no streaks to break, no guilt.
+  </p>
+
+  <a class="cta" href="https://apps.apple.com/app/id6779349680">Get Wabbi — free</a>
+
+  <div class="card">
+    <h2>Two steps</h2>
+    <ol>
+      <li>Download Wabbi and open it.</li>
+      <li id="step2">When Wabbi asks who invited you, enter their username.</li>
+    </ol>
+  </div>
+
+  <footer>
+    iPhone, free, no ads.<br>
+    <a href="https://wabbiapp.com/privacy.html">Privacy</a> ·
+    <a href="https://wabbiapp.com/terms.html">Terms</a> ·
+    <a href="https://wabbiapp.com/support.html">Support</a>
+  </footer>
+</main>
+
+<script>
+(function () {
+  // ⚠️ textContent ONLY. See the header comment — this value is attacker-
+  // controlled via the query string and must never reach innerHTML.
+  var params = new URLSearchParams(window.location.search);
+
+  // ⚠️ A CLUB CODE NEVER NAMES THE CLUB ON THE OPEN WEB. `preview_club_invite`
+  // refuses an anonymous caller BY DESIGN — a club is private, and its name is
+  // not ours to print to anyone who guesses a URL. So `?c=` gets a deliberately
+  // GENERIC headline and the code is never echoed back either: the app reads it
+  // from the link itself. Do not "improve" this by fetching the name.
+  var club = params.get('c') || '';
+  if (/^[0-9A-HJKMNP-TV-Z]{8}$/.test(club.toUpperCase())) {
+    var h = document.getElementById('headline');
+    h.textContent = '';
+    h.appendChild(document.createTextNode("You've been invited to a club on Wabbi"));
+    var s2 = document.getElementById('step2');
+    s2.textContent = '';
+    s2.appendChild(document.createTextNode(
+      'Open Wabbi and tap the link again — it carries the invite for you.'));
+    document.title = "You've been invited to a club on Wabbi";
+    return;
+  }
+
+  var raw = params.get('u') || '';
+
+  // ⚠️ THIS MUST MATCH THE APP'S OWN RULE EXACTLY. The LIVE set_username body
+  // (mig 116, hotfixed by mig 117) enforces /^[A-Za-z0-9_]{3,20}$/ — the same
+  // expression, the same bounds. It is mirrored in src/lib/referrals.ts as
+  // USERNAME_RE; change all three together or the page will echo a string the
+  // app can never resolve.
+  //
+  // It read {1,30} until 2026-09-30: a harmless SUPERSET (all 79 live usernames
+  // matched either way, so nothing regressed) but a loose one — a 1- or 25-char
+  // ?u= is not a real handle and should fall back to the generic headline rather
+  // than be printed back to the visitor as if it were someone's name.
+  var name = /^[A-Za-z0-9_]{3,20}$/.test(raw) ? raw : '';
+  if (!name) return;
+
+  var headline = document.getElementById('headline');
+  headline.textContent = '';
+  headline.appendChild(document.createTextNode(name));
+  headline.appendChild(document.createTextNode(' invited you to Wabbi'));
+
+  var step2 = document.getElementById('step2');
+  step2.textContent = '';
+  step2.appendChild(document.createTextNode('When Wabbi asks who invited you, enter '));
+  var code = document.createElement('code');
+  code.textContent = name;
+  step2.appendChild(code);
+  step2.appendChild(document.createTextNode('.'));
+
+  document.title = name + ' invited you to Wabbi';
+})();
+</script>
+</body>
+</html>
