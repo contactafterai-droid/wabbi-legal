@@ -200,15 +200,15 @@
 
     // 4. Sign-ups + funnel.
     var sd = d.signups_daily || [], maxS = Math.max.apply(null, sd.map(function (r) { return r.signups; }).concat([1]));
-    out.push(card('Sign-ups', 'How far each day’s new accounts got. “Steps arrived” stands in for Health connected (not recorded directly).', [
+    out.push(card('Sign-ups', 'How far each day’s new accounts got. “Health connected” means has synced any steps — iOS never reveals whether Health access was granted.', [
       el('details', { open: '' }, [el('summary', { text: 'By week (last 12)' }),
         table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'Sign-ups', n: true }, { key: 'u', label: 'Username', n: true },
-               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Steps arrived', n: true }],
+               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Health connected', n: true }],
           (d.signups_weekly || []).map(function (r) { return { w: day(r.week_of), s: num(r.signups), u: num(r.with_username),
             h: num(r.hatched), st: num(r.steps_arrived) }; }))]),
       el('details', null, [el('summary', { text: 'By day (last 30)' }),
         table([{ key: 'd', label: 'Day' }, { key: 's', label: 'Sign-ups' }, { key: 'u', label: 'Username', n: true },
-               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Steps arrived', n: true }],
+               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Health connected', n: true }],
           sd.map(function (r) { return { d: day(r.day), s: bar(r.signups, maxS), u: num(r.with_username),
             h: num(r.hatched), st: num(r.steps_arrived) }; }))])
     ]));
