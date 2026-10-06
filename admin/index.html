@@ -114,7 +114,7 @@
     if (h < 24) return Math.round(h) + 'h ago';
     var dd = Math.round(h / 24); return dd + (dd === 1 ? ' day ago' : ' days ago'); }
   function user(u) { return u ? '@' + u : '(no username yet)'; }
-  function version(v, b) { if (!v && !b) return 'unstamped (ASC ≤ 33)'; return (v || '?') + ' (' + (b || '?') + ')'; }
+  function version(v, b) { if (!v && !b) return 'not recorded'; if (!b) return v; return (v || '?') + ' (' + b + ')'; }
   function card(title, sub, kids, cls) {
     return el('section', { class: 'card' + (cls ? ' ' + cls : '') },
       [el('h2', { text: title }), sub ? el('p', { class: 'sub', text: sub }) : null].concat(kids || []));
@@ -200,7 +200,7 @@
 
     // 4. Sign-ups + funnel.
     var sd = d.signups_daily || [], maxS = Math.max.apply(null, sd.map(function (r) { return r.signups; }).concat([1]));
-    out.push(card('Sign-ups', 'How far each day’s new accounts got. “Health connected” means has synced any steps — iOS never reveals whether Health access was granted.', [
+    out.push(card('Sign-ups', 'App accounts only (anyone who reached the app’s onboarding). “Health connected” means has synced any steps — iOS never reveals whether Health access was granted.' + (t.not_app_accounts ? ' Not counted: ' + t.not_app_accounts + ' account(s) that never opened the app.' : ''), [
       el('details', { open: '' }, [el('summary', { text: 'By week (last 12)' }),
         table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'Sign-ups', n: true }, { key: 'u', label: 'Username', n: true },
                { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Health connected', n: true }],
@@ -243,12 +243,40 @@
       el('details', null, [el('summary', { text: 'Never synced — ' + (ns.never || []).length }), nsTable(ns.never || [])])
     ]));
 
+    // 6b. New accounts (14 days) with no steps.
+    var nn = d.new_no_steps || [];
+    out.push(card('New accounts with no steps yet (last 14 days) — ' + nn.length,
+      'Sign-in method and Hide My Email decide how a help email can reach them. The app only records its version during a step sync, so never-synced accounts show no version.', [
+      table([{ key: 'u', label: 'User' }, { key: 'why', label: 'Likely why' }, { key: 'j', label: 'Joined' },
+             { key: 's', label: 'Sign-in' }, { key: 'h', label: 'Hide My Email' }, { key: 'o', label: 'Onboarded' },
+             { key: 'lo', label: 'Last opened' }, { key: 'v', label: 'Version' }],
+        nn.map(function (r) { return { u: user(r.username), why: el('span', { class: 'pill', text: r.why }), j: day(r.joined),
+          s: r.sign_in || '—', h: r.hide_my_email ? 'yes' : 'no', o: r.onboarded ? 'yes' : 'no',
+          lo: when(r.last_open), v: version(r.app_version, r.app_build) }; }))]));
+
+    // 6c. Invite funnel (people, last 30 days).
+    var f = d.invite_funnel_30d || {};
+    var steps = [['Tapped the pumpkin', f.pumpkin_tapped], ['Opened Invite friends', f.invite_friends_opened],
+                 ['Opened the share sheet', f.share_opened], ['Shared', f.shared],
+                 ['Friend entered a username', f.friend_redeemed], ['Friend qualified', f.friend_qualified]];
+    var fmax = Math.max.apply(null, steps.map(function (x) { return x[1] || 0; }).concat([1]));
+    var from = f.opened_from || {}, to = f.shared_to || {};
+    out.push(card('Invite funnel — people, last 30 days',
+      'The first four steps start counting with 1.0.11; the last two come from referrals.', [
+      table([{ key: 'k', label: 'Step' }, { key: 'v', label: 'People' }],
+        steps.map(function (x) { return { k: x[0], v: bar(x[1] || 0, fmax) }; })),
+      el('p', { class: 'muted', text: 'Opened from: ' + (Object.keys(from).length ? Object.keys(from).map(function (k) { return k + ' ' + from[k]; }).join(' · ') : '—') }),
+      el('p', { class: 'muted', text: 'Shared to: ' + (Object.keys(to).length ? Object.keys(to).map(function (k) { return k.replace('com.apple.UIKit.activity.', '') + ' ' + to[k]; }).join(' · ') : '—') })]));
+
     // 7. Referrals + clubs.
     var r = d.referrals || {}, c = d.clubs || {};
     out.push(el('div', { class: 'two' }, [
       card('Referrals', null, [
         el('div', { class: 'tiles' }, [tile('Redeemed', num(r.redeemed)), tile('Qualified', num(r.qualified)),
           tile('Rewards granted', num(r.rewards_granted)), tile('Welcome eggs', num(r.welcome_eggs_granted))]),
+        table([{ key: 's', label: 'Came in by' }, { key: 'r', label: 'Redeemed', n: true }, { key: 'q', label: 'Qualified', n: true }, { key: 'g', label: 'Rewarded', n: true }],
+          (d.referrals_by_source || []).map(function (x) { return { s: x.source === 'club_invite' ? 'club invite' : 'username',
+            r: num(x.redeemed), q: num(x.qualified), g: num(x.rewards_granted) }; })),
         table([{ key: 'i', label: 'Friend' }, { key: 'f', label: 'Invited by' }, { key: 'q', label: 'Status' }],
           (r.recent || []).map(function (x) { return { i: user(x.invitee), f: user(x.referrer),
             q: x.rewards_granted_at ? 'rewarded' : x.qualified_at ? 'qualified' : 'waiting for steps' }; }))]),
