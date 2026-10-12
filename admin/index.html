@@ -201,18 +201,28 @@
 
     // 4. Sign-ups + funnel.
     var sd = d.signups_daily || [], maxS = Math.max.apply(null, sd.map(function (r) { return r.signups; }).concat([1]));
-    out.push(card('Sign-ups', 'App accounts only (anyone who reached the app’s onboarding). “Health connected” means has synced any steps — iOS never reveals whether Health access was granted.' + (t.not_app_accounts ? ' Not counted: ' + t.not_app_accounts + ' account(s) that never opened the app.' : ''), [
+    var hasPH = sd.length && sd[0].passed_health != null;   // mig 133+
+    out.push(card('Sign-ups', 'Every app account: anyone who signed in with Apple or email, or has an egg, a wabbi or an app version. “Passed Health” = got their first egg (it comes right after the Apple Health screen). “Health connected” means has synced any steps — iOS never reveals whether Health access was granted.' + (t.not_app_accounts ? ' Not counted: ' + t.not_app_accounts + ' Google account(s) with nothing in the app (possible web sign-ins).' : ''), [
       el('details', { open: '' }, [el('summary', { text: 'By week (last 12)' }),
-        table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'Sign-ups', n: true }, { key: 'u', label: 'Username', n: true },
-               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Health connected', n: true }],
-          (d.signups_weekly || []).map(function (r) { return { w: day(r.week_of), s: num(r.signups), u: num(r.with_username),
+        table([{ key: 'w', label: 'Week of' }, { key: 's', label: 'Sign-ups', n: true }].concat(hasPH ? [{ key: 'ph', label: 'Passed Health', n: true }] : [])
+               .concat([{ key: 'h', label: 'Hatched', n: true }, { key: 'u', label: 'Username', n: true }, { key: 'st', label: 'Health connected', n: true }]),
+          (d.signups_weekly || []).map(function (r) { return { w: day(r.week_of), s: num(r.signups), ph: num(r.passed_health), u: num(r.with_username),
             h: num(r.hatched), st: num(r.steps_arrived) }; }))]),
       el('details', null, [el('summary', { text: 'By day (last 30)' }),
-        table([{ key: 'd', label: 'Day' }, { key: 's', label: 'Sign-ups' }, { key: 'u', label: 'Username', n: true },
-               { key: 'h', label: 'Hatched', n: true }, { key: 'st', label: 'Health connected', n: true }],
-          sd.map(function (r) { return { d: day(r.day), s: bar(r.signups, maxS), u: num(r.with_username),
+        table([{ key: 'd', label: 'Day' }, { key: 's', label: 'Sign-ups' }].concat(hasPH ? [{ key: 'ph', label: 'Passed Health', n: true }] : [])
+               .concat([{ key: 'h', label: 'Hatched', n: true }, { key: 'u', label: 'Username', n: true }, { key: 'st', label: 'Health connected', n: true }]),
+          sd.map(function (r) { return { d: day(r.day), s: bar(r.signups, maxS), ph: num(r.passed_health), u: num(r.with_username),
             h: num(r.hatched), st: num(r.steps_arrived) }; }))])
     ]));
+
+    // 4b. Stopped at the Health screen (mig 133).
+    if (d.stopped_at_health) {
+      var sh = d.stopped_at_health;
+      out.push(card('Stopped at the Health screen (last 30 days) — ' + sh.length,
+        'Signed in, then never got their first egg. The egg is awarded right after the Apple Health screen, so they left on that screen or at Apple’s permission sheet. No username exists yet, so they are listed by sign-up time. All time: ' + num(t.stopped_at_health) + '.', [
+        table([{ key: 'j', label: 'Signed up' }, { key: 's', label: 'Sign-in' }, { key: 'h', label: 'Hide My Email' }, { key: 'v', label: 'Version' }],
+          sh.map(function (r) { return { j: when(r.joined_at), s: r.sign_in || '—', h: r.hide_my_email ? 'yes' : 'no', v: version(r.app_version, r.app_build) }; }))]));
+    }
 
     // 5. Steps synced vs opened the app — two different things (mig 132).
     var sd5 = d.synced_daily || d.opens_daily || [], maxO = Math.max.apply(null, sd5.map(function (r) { return r.users; }).concat([1]));
