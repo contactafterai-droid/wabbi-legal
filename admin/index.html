@@ -178,11 +178,12 @@
 
     // 2. Headline tiles.
     var t = d.totals || {}, lb = d.leaderboard || {}, m = d.money || {};
+    var op = d.opened || { collecting: false, today: 0, this_week: 0, daily: [] };
     var lbWarn = lb.this_week > lb.warn_at;
     out.push(el('div', { class: 'tiles' }, [
       tile('Accounts', num(t.accounts)),
-      tile('Opened today', num(t.opened_today)),
-      tile('Opened in 7 days', num(t.opened_7d)),
+      tile('Steps synced today', num(t.synced_today != null ? t.synced_today : t.opened_today)),
+      tile('Opened the app today', op.collecting ? num(op.today) : 'from 1.0.11'),
       tile('On this week’s board', num(lb.this_week) + (lbWarn ? ' ⚠️' : ''), lbWarn),
       tile('Purchases (live)', num(m.production_purchases)),
       tile('Open reports', num(rep.count), rep.count > 0)
@@ -213,31 +214,42 @@
             h: num(r.hatched), st: num(r.steps_arrived) }; }))])
     ]));
 
-    // 5. App opens.
-    var od = d.opens_daily || [], maxO = Math.max.apply(null, od.map(function (r) { return r.users; }).concat([1]));
-    out.push(card('People opening the app',
-      'Distinct people per day, from the care updates the app writes on open. Opened in 30 days: ' + num(t.opened_30d) + '.', [
+    // 5. Steps synced vs opened the app — two different things (mig 132).
+    var sd5 = d.synced_daily || d.opens_daily || [], maxO = Math.max.apply(null, sd5.map(function (r) { return r.users; }).concat([1]));
+    var sw5 = d.synced_weekly || d.opens_weekly || [];
+    out.push(card('Steps synced',
+      'People whose app synced with Wabbi that day — including in the BACKGROUND (iPhone sends steps while the phone is in a pocket). This is not the same as opening the app. Days are US Eastern. Synced in 7 days: ' +
+      num(t.synced_7d != null ? t.synced_7d : t.opened_7d) + ' · 30 days: ' + num(t.synced_30d != null ? t.synced_30d : t.opened_30d) + '.', [
       el('details', { open: '' }, [el('summary', { text: 'By day (last 30)' }),
         table([{ key: 'd', label: 'Day' }, { key: 'u', label: 'People' }],
-          od.map(function (r) { return { d: day(r.day), u: bar(r.users, maxO) }; }))]),
+          sd5.map(function (r) { return { d: day(r.day), u: bar(r.users, maxO) }; }))]),
       el('details', null, [el('summary', { text: 'By week (last 12)' }),
         table([{ key: 'w', label: 'Week of' }, { key: 'u', label: 'People', n: true }],
-          (d.opens_weekly || []).map(function (r) { return { w: day(r.week_of), u: num(r.users) }; }))])
+          sw5.map(function (r) { return { w: day(r.week_of), u: num(r.users) }; }))])
     ]));
+    var maxOp = Math.max.apply(null, (op.daily || []).map(function (r) { return r.users; }).concat([1]));
+    out.push(card('Opened the app',
+      op.collecting
+        ? 'People who brought Wabbi to the screen, at most once per person per day (US Eastern). Background syncs never count here.'
+        : 'Not collected yet — this starts with app version 1.0.11. Until then, “Steps synced” above is the closest signal, and it includes background syncs.',
+      op.collecting ? [
+        el('div', { class: 'tiles' }, [tile('Today', num(op.today)), tile('This week', num(op.this_week))]),
+        table([{ key: 'd', label: 'Day' }, { key: 'u', label: 'People' }],
+          (op.daily || []).map(function (r) { return { d: day(r.day), u: bar(r.users, maxOp) }; }))] : []));
 
     // 6. Not syncing.
     var ns = d.not_syncing || {};
     function nsTable(list) {
       return table([{ key: 'u', label: 'User' }, { key: 'why', label: 'Likely why' }, { key: 'ls', label: 'Last steps' },
-                    { key: 'lo', label: 'Last opened' }, { key: 'v', label: 'Version' }, { key: 'j', label: 'Joined' }],
+                    { key: 'lo', label: 'Last active (synced or opened)' }, { key: 'v', label: 'Version' }, { key: 'j', label: 'Joined' }],
         list.map(function (r) { return { u: user(r.username),
           why: el('span', { class: 'pill' + (r.why === 'old version' ? ' warn' : ''), text: r.why }),
-          ls: r.last_sync ? when(r.last_sync) : 'never', lo: when(r.last_open),
+          ls: r.last_sync ? when(r.last_sync) : 'never', lo: when(r.last_active || r.last_open),
           v: version(r.app_version, r.app_build), j: day(r.joined) }; }));
     }
     out.push(card('Not syncing',
-      '“Likely why”: not opening the app (no open in 3 days) → old version (below build ' + (d.min_recommended_build || '?') +
-      ') → otherwise steps aren’t arriving from Health.', [
+      '“Likely why”: app not running (no open or background sync in 3 days) → old version (below build ' + (d.min_recommended_build || '?') +
+      ') → otherwise the app runs but no steps arrive from Health.', [
       el('details', { open: '' }, [el('summary', { text: 'No steps for 7+ days — ' + (ns.d7plus || []).length }), nsTable(ns.d7plus || [])]),
       el('details', { open: '' }, [el('summary', { text: 'No steps for 3–7 days — ' + (ns.d3to7 || []).length }), nsTable(ns.d3to7 || [])]),
       el('details', null, [el('summary', { text: 'Never synced — ' + (ns.never || []).length }), nsTable(ns.never || [])])
@@ -249,10 +261,10 @@
       'Sign-in method and Hide My Email decide how a help email can reach them. The app only records its version during a step sync, so never-synced accounts show no version.', [
       table([{ key: 'u', label: 'User' }, { key: 'why', label: 'Likely why' }, { key: 'j', label: 'Joined' },
              { key: 's', label: 'Sign-in' }, { key: 'h', label: 'Hide My Email' }, { key: 'o', label: 'Onboarded' },
-             { key: 'lo', label: 'Last opened' }, { key: 'v', label: 'Version' }],
+             { key: 'lo', label: 'Last active' }, { key: 'v', label: 'Version' }],
         nn.map(function (r) { return { u: user(r.username), why: el('span', { class: 'pill', text: r.why }), j: day(r.joined),
           s: r.sign_in || '—', h: r.hide_my_email ? 'yes' : 'no', o: r.onboarded ? 'yes' : 'no',
-          lo: when(r.last_open), v: version(r.app_version, r.app_build) }; }))]));
+          lo: when(r.last_active || r.last_open), v: version(r.app_version, r.app_build) }; }))]));
 
     // 6c. Invite funnel (people, last 30 days).
     var f = d.invite_funnel_30d || {};
@@ -287,11 +299,11 @@
 
     // 8. Versions.
     out.push(card('App versions in use', 'Below build ' + (d.min_recommended_build || '?') + ' is nudged to update.', [
-      table([{ key: 'v', label: 'Version' }, { key: 'u', label: 'Accounts', n: true }, { key: 'o', label: 'Opened in 7 days', n: true }],
+      table([{ key: 'v', label: 'Version' }, { key: 'u', label: 'Accounts', n: true }, { key: 'o', label: 'Active in 7 days', n: true }],
         (d.versions || []).map(function (x) {
           var old = x.build && /^\d+$/.test(x.build) && Number(x.build) < (d.min_recommended_build || 0);
           return { v: el('span', { class: old ? 'pill warn' : '', text: version(x.version, x.build) }),
-                   u: num(x.users), o: num(x.opened_7d) }; }))]));
+                   u: num(x.users), o: num(x.active_7d != null ? x.active_7d : x.opened_7d) }; }))]));
 
     // 9. Money — Wabbi's own credit ledger; RevenueCat is the source of truth.
     var rc = el('a', { class: 'btn', href: d.revenuecat_url || 'https://app.revenuecat.com/', target: '_blank', rel: 'noopener', text: 'Open RevenueCat' });
