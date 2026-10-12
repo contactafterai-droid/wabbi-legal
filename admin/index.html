@@ -1,6 +1,8 @@
 <!doctype html>
 <!--
-  wabbiapp.com/admin — the founder dashboard (mig 129). READ-ONLY.
+  wabbiapp.com/admin — the founder dashboard (mig 129). READ-ONLY, with ONE exception:
+  the Off switches card (mig 136) calls admin_set_feature(), an admin-only function that
+  flips one feature switch and logs who + when. Nothing else on this page writes.
 
   ⚠️ NO SERVICE-ROLE KEY. This page holds only the PUBLIC publishable key (the same
   one every app build ships). You sign in with Google; every number comes from ONE
@@ -75,7 +77,7 @@
     <button class="quiet" id="signout" hidden>Sign out</button>
   </header>
   <div id="app"><p class="center muted">Loading…</p></div>
-  <footer>Read-only. Every number comes from admin_dashboard(), which only answers for admins.</footer>
+  <footer>Every number comes from admin_dashboard(), which only answers for admins. The only thing this page can change is an off switch — every change is logged.</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.4/dist/umd/supabase.js"></script>
@@ -176,6 +178,33 @@
           reason: r.reason, target: r.target, reporter: r.reporter }; }))] : [],
       rep.count > 0 ? 'alert' : 'ok'));
 
+    // 1b. Off switches (mig 136) — the ONE control on this page that writes.
+    if (d.features) {
+      var fl = d.features.current || [], lg = d.features.log || [];
+      out.push(card('Off switches',
+        'Each big feature is inside the app but stays OFF until you turn it on here. OFF = the app behaves like 1.0.10. Phones pick up a change the next time the app opens. Every change is logged with who and when.', [
+        table([{ key: 'f', label: 'Feature' }, { key: 's', label: 'State' }, { key: 'c', label: 'Last changed' }, { key: 'a', label: '' }],
+          fl.map(function (f) {
+            var btn = el('button', { class: 'btn', text: f.enabled ? 'Turn OFF' : 'Turn ON' });
+            btn.addEventListener('click', function () {
+              var want = !f.enabled;
+              if (!window.confirm((want ? 'Turn ON “' : 'Turn OFF “') + f.label + '” for everyone on 1.0.11?')) return;
+              btn.disabled = true; btn.textContent = 'Saving…';
+              sb.rpc('admin_set_feature', { p_key: f.key, p_enabled: want }).then(function (res) {
+                if (res.error) { window.alert('Not changed: ' + (res.error.message || 'error')); btn.disabled = false; btn.textContent = f.enabled ? 'Turn OFF' : 'Turn ON'; return; }
+                sb.auth.getSession().then(function (r) { load(r.data.session); });
+              });
+            });
+            return { f: f.label, s: el('span', { class: 'pill' + (f.enabled ? '' : ' warn'), text: f.enabled ? 'ON' : 'OFF' }),
+                     c: f.updated_by ? when(f.updated_at) + ' by ' + f.updated_by : 'never', a: btn };
+          })),
+        el('details', null, [el('summary', { text: 'Change log (last 20)' }),
+          lg.length ? table([{ key: 'w', label: 'When' }, { key: 'f', label: 'Feature' }, { key: 'e', label: 'Set to' }, { key: 'b', label: 'By' }],
+            lg.map(function (x) { return { w: day(x.at) + ' · ' + when(x.at), f: x.key, e: x.enabled ? 'ON' : 'OFF', b: x.by }; }))
+            : el('p', { class: 'muted', text: 'No changes yet.' })])
+      ]));
+    }
+
     // 2. Headline tiles.
     var t = d.totals || {}, lb = d.leaderboard || {}, m = d.money || {};
     var op = d.opened || { collecting: false, today: 0, this_week: 0, daily: [] };
@@ -214,6 +243,19 @@
           sd.map(function (r) { return { d: day(r.day), s: bar(r.signups, maxS), ph: num(r.passed_health), u: num(r.with_username),
             h: num(r.hatched), st: num(r.steps_arrived) }; }))])
     ]));
+
+    // 4a. Health-screen funnel (mig 136; filled by 1.0.11+).
+    if (d.health_screen_30d) {
+      var hf = d.health_screen_30d;
+      var hsteps = [['Saw the Health screen', hf.shown], ['Tapped Continue', hf.continue],
+                    ['Apple’s sheet closed (either answer)', hf.sheet_closed], ['Got their first egg', hf.egg_awarded],
+                    ['First egg FAILED', hf.egg_failed]];
+      out.push(card('Health screen, step by step (people, last 30 days)',
+        hf.shown ? 'Where new people stop. iOS never says whether they allowed or refused — only that Apple’s sheet closed.'
+                 : 'Not collected yet — this starts with app version 1.0.11.',
+        hf.shown ? [table([{ key: 'k', label: 'Step' }, { key: 'v', label: 'People', n: true }],
+          hsteps.map(function (x) { return { k: x[0], v: num(x[1] || 0) }; }))] : []));
+    }
 
     // 4b. Stopped at the Health screen (mig 133).
     if (d.stopped_at_health) {
