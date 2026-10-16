@@ -21,6 +21,7 @@
 
   ⚠️ NO TRACKING. No analytics, no cookies, no fonts from a CDN, no pixels, no
   third-party requests of any kind. The page is one file and loads nothing.
+  (invite/share.jpg is fetched only by link-preview bots, never by the page.)
 
   Palette is the app's, from src/theme/theme.ts.
   ============================================================================
@@ -34,6 +35,23 @@
 <meta name="robots" content="noindex">
 <meta property="og:title" content="You've been invited to Wabbi">
 <meta property="og:description" content="A calm step pet. Your real walks and runs hatch and grow a small creature.">
+<!-- Link preview card (Messages, WhatsApp, Slack…). ⚠️ GENERIC ON PURPOSE: the same
+     card serves friend (?u=) and club (?c=) invites, so it never names a club or a
+     person. Image = existing header art (round 3.1 H2), 1200×630, served from here. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Wabbi">
+<meta property="og:url" content="https://wabbiapp.com/invite/">
+<meta property="og:image" content="https://wabbiapp.com/invite/share.jpg">
+<meta property="og:image:secure_url" content="https://wabbiapp.com/invite/share.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Five wabbis standing together">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="You've been invited to Wabbi">
+<meta name="twitter:description" content="A calm step pet. Your real walks and runs hatch and grow a small creature.">
+<meta name="twitter:image" content="https://wabbiapp.com/invite/share.jpg">
+<meta name="twitter:image:alt" content="Five wabbis standing together">
 <style>
   :root {
     --bg: #FBF2E4;
